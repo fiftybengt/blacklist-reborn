@@ -1,5 +1,7 @@
 # Blacklist Reborn
 
+**Version 1** · WoW 3.3.5a · no dependencies
+
 A World of Warcraft **3.3.5a (Wrath of the Lich King)** addon that keeps a list of players you never want to group with again, and tells you when one of them turns up.
 
 It is a ground-up overhaul of the classic *Black List* addon by Logan / ElrickEnonimis: no more warning spam, no chat filtering, working raid support, a full chat command set, and none of the interface taint that used to break Blizzard's own menus.
@@ -11,7 +13,7 @@ It is a ground-up overhaul of the classic *Black List* addon by Logan / ElrickEn
 ### Notifications that stay quiet until they matter
 You are notified in exactly two situations:
 
-- **A blacklisted player invites you to a group.** The warning shows, but the invite is left alone. You decide whether to accept.
+- **A blacklisted player invites you to a group.** The warning shows, but the invite is left alone. You decide whether to accept. Repeated invites from the same player within 10 seconds only warn once.
 - **You join a party or raid that contains a blacklisted player** (or one joins yours). You get one notice per player per group. Roster changes don't repeat it, and a player who leaves and comes back is announced again.
 
 Each notice can play a sound, appear in the middle of the screen, and print to chat along with the reason you blacklisted them. All three can be switched off.
@@ -19,7 +21,7 @@ Each notice can play a sound, appear in the middle of the screen, and print to c
 Nothing is ever blocked. Whispers, party, raid, guild and channel messages from blacklisted players come through exactly as normal.
 
 ### Adding players
-- **Right-click any player** in party frames, raid frames, the target frame, your friends list, the chat channel roster, or on a name in chat. Choose **Add to Blacklist** from the small panel under the menu. **Guild Invite** and **Add to Friends** are there too.
+- **Right-click any player** in party frames, raid frames, the target frame, your friends list, the chat channel roster, or on a name in chat. Choose **Add to Blacklist** from the small panel under the menu (above it, if the menu is near the bottom of the screen). **Guild Invite** and **Add to Friends** are there too.
 - **`/bl add`** blacklists your current target, or **`/bl add <name> <reason>`** adds anyone by name.
 - The **Add Player** button in the window does the same, and asks for a name if you have no target.
 
@@ -27,13 +29,13 @@ Nothing is ever blocked. Whispers, party, raid, guild and channel messages from 
 Dungeon Finder groups mix realms. Entries remember the realm, so blacklisting *Bob* from another realm doesn't flag the *Bob* on yours. The list shows them as `Bob (Realm)`.
 
 ### The Blacklist window
-Open it with `/bl`, the **Blacklist** tab on the Friends frame, or a keybinding.
+Open it with `/bl`, the **Blacklist** tab on the Friends frame, or a keybinding. It opens where the Friends frame sits, can be dragged anywhere, and closes with **Escape**.
 
-- Scrollable, alphabetical list of everyone you've blacklisted.
+- Scrollable, alphabetical list of everyone you've blacklisted, with a count at the top.
 - Details panel for each player: level, class, race, faction crest, the date you added them, and a free-text **reason** (up to 500 characters) that saves as you type.
-- **Warn Me** checkbox per player. Untick it to keep someone on the list without getting notified.
+- **Warn Me** checkbox per player. Untick it to stop invite and group-join notifications for that player. They still show up in `/bl list` and `/bl warn`.
 - **Edit** level, class and race by hand, for players you added by name.
-- **List Group** button to check your current group at a glance.
+- **Add Player**, **Remove Player**, **Options** and **List Group** buttons along the bottom.
 
 ### Checking and warning your group
 - **`/bl list`** shows which members of your current raid (or party) are blacklisted, with reasons. Only you see it.
@@ -43,12 +45,12 @@ Open it with `/bl`, the **Blacklist** tab on the Friends frame, or a keybinding.
   Bob blacklisted at 2026-08-16
   Kev (Frostmourne) blacklisted at 2026-09-02
   ```
-- **`/bl reason on`** adds the reason to every `/bl warn` line. It stays on across sessions until you type `/bl reason off`; the default is off.
+- **`/bl reason on`** adds the reason to every `/bl warn` line. It stays on across sessions until you type `/bl reason off`; the default is off. Capitals don't matter, and `/bl reason` on its own tells you the current setting.
   ```
   Bob blacklisted at 2026-08-16 for ninja looted
   Kev (Frostmourne) blacklisted at 2026-09-02 for left mid-boss
   ```
-  A line that would pass the 255-character chat limit is cut short and ends in `..`. Messages are spaced out so the server won't throttle them, and after 10 players the rest are summed up in one line.
+  A line that would pass the 255-character chat limit is cut short and ends in `..`. Messages are spaced out so the server won't throttle them, and after 10 players the rest are summed up in one line (`...and 3 more blacklisted.`). A `|` in a reason is posted as `/`, since WoW rejects chat messages containing it; your saved reason is unchanged.
 
 ---
 
@@ -58,7 +60,7 @@ All commands start with `/bl` (or `/blacklist`). Flags always start with a dash.
 
 | Command | What it does |
 |---|---|
-| `/bl` | Open or close the Blacklist window |
+| `/bl` or `/bl show` | Open or close the Blacklist window |
 | `/bl help` | Show the command list |
 | `/bl add [name] [reason]` | Blacklist a player by name, or your target if no name is given |
 | `/bl remove [name]` | Remove a player by name, or your target |
@@ -69,15 +71,16 @@ All commands start with `/bl` (or `/blacklist`). Flags always start with a dash.
 | `/bl warn -r` | Announce to raid chat |
 | `/bl warn -g` | Announce blacklisted guild members to guild chat |
 | `/bl reason on` / `/bl reason off` | Include or leave out the reason in `/bl warn` (default off, remembered between sessions) |
+| `/bl reason` | Show whether reasons are on or off |
 | `/bl options` | Open the options panel |
 
-`/bl -p`, `/bl -r` and `/bl -g` work as shortcuts for `/bl warn -p|-r|-g`. The old `/removebl` still works and points you to `/bl remove`.
+`/bl -p`, `/bl -r` and `/bl -g` work as shortcuts for `/bl warn -p|-r|-g`. `/bl config` is the same as `/bl options`. The old `/removebl` and `/removeblacklist` still work and point you to `/bl remove`.
 
 ---
 
 ## Options
 
-Open with `/bl options` or the **Options** button in the window.
+Open with `/bl options` or the **Options** button in the window. Hold **Alt** and drag to move it; **Escape** closes it.
 
 | Option | Default | Effect |
 |---|---|---|
@@ -115,12 +118,21 @@ Old entries are upgraded automatically the first time you log in.
 ## What changed from the original addon
 
 - **Raids work.** Adding from raid frames and detecting blacklisted players in raids were both broken before.
-- **No interface taint.** The original addon edited Blizzard's right-click menus directly. That made Blizzard hide *Target* (and *Main Tank* / *Main Assist*) and block *Set Focus* with an "addon blocked" error. Blacklist Reborn never modifies Blizzard's menus, Friends frame or popups.
+- **No interface taint.** The original addon edited Blizzard's right-click menus directly. That made Blizzard hide *Target* (and *Main Tank* / *Main Assist* for raid leaders), and clicking it could fail with an "addon blocked" error. Blacklist Reborn never modifies Blizzard's menus, Friends frame or popups.
 - **No spam.** Mouseover, target, `/who` and guild roster warnings are gone. Invite and group-join notices each fire once.
 - **No chat filtering.** The automatic "Ignored" whisper replies are gone.
 - **Options now persist.** Before, they reset to their defaults on every login.
 - **Removed:** guild auto-ban and auto-kick of inactive members.
 - **New:** `/bl list`, `/bl warn` (with optional reasons via `/bl reason`), cross-realm entries, standalone window, per-player *Warn Me*.
+
+---
+
+## Troubleshooting
+
+- **The Black List panel disappears before I can click it.** Blizzard closes a right-click menu about 2 seconds after the mouse leaves it, and our panel goes with it. Move straight down onto the panel and click.
+- **"Target" is still missing from right-click menus after upgrading.** Do a full `/reload` or relog. Interface taint from the old *Black List* addon lasts until the UI reloads.
+- **Something gets "blocked" anyway.** Type `/console taintLog 1`, reproduce the problem, then open an issue with the contents of `World of Warcraft/Logs/taint.log`.
+- **My old list is empty.** See [Keeping your list from the original Black List addon](#keeping-your-list-from-the-original-black-list-addon).
 
 ---
 
