@@ -38,11 +38,17 @@ Open it with `/bl`, the **Blacklist** tab on the Friends frame, or a keybinding.
 ### Checking and warning your group
 - **`/bl list`** shows which members of your current raid (or party) are blacklisted, with reasons. Only you see it.
 - **`/bl list -g`** does the same for your whole guild, offline members included.
-- **`/bl warn`** tells your group, in raid chat if you're in a raid and party chat otherwise, which of its members are blacklisted and why:
+- **`/bl warn`** tells your group, in raid chat if you're in a raid and party chat otherwise, which of its members are blacklisted and when you added them, one line per player:
   ```
-  On my blacklist: Bob - ninja looted; Kev (Frostmourne) - left mid-boss
+  Bob blacklisted at 2026-08-16
+  Kev (Frostmourne) blacklisted at 2026-09-02
   ```
-  Long reasons are shortened to fit, and messages are spaced out so the server won't throttle them.
+- **`/bl reason on`** adds the reason to every `/bl warn` line. It stays on across sessions until you type `/bl reason off`; the default is off.
+  ```
+  Bob blacklisted at 2026-08-16 for ninja looted
+  Kev (Frostmourne) blacklisted at 2026-09-02 for left mid-boss
+  ```
+  A line that would pass the 255-character chat limit is cut short and ends in `..`. Messages are spaced out so the server won't throttle them, and after 10 players the rest are summed up in one line.
 
 ---
 
@@ -62,6 +68,7 @@ All commands start with `/bl` (or `/blacklist`). Flags always start with a dash.
 | `/bl warn -p` | Announce to party chat |
 | `/bl warn -r` | Announce to raid chat |
 | `/bl warn -g` | Announce blacklisted guild members to guild chat |
+| `/bl reason on` / `/bl reason off` | Include or leave out the reason in `/bl warn` (default off, remembered between sessions) |
 | `/bl options` | Open the options panel |
 
 `/bl -p`, `/bl -r` and `/bl -g` work as shortcuts for `/bl warn -p|-r|-g`. The old `/removebl` still works and points you to `/bl remove`.
@@ -78,7 +85,7 @@ Open with `/bl options` or the **Options** button in the window.
 | Warn at Center | On | Show the notification in the middle of the screen |
 | Show in Chat | On | Print the notification and the reason to your chat frame |
 
-Settings are saved per character. The blacklist itself is shared by all characters on the same realm.
+Settings, including `/bl reason`, are saved per character. The blacklist itself is shared by all characters on the same realm.
 
 A keybinding to open the window is under **Key Bindings → Blacklist Reborn**.
 
@@ -113,7 +120,7 @@ Old entries are upgraded automatically the first time you log in.
 - **No chat filtering.** The automatic "Ignored" whisper replies are gone.
 - **Options now persist.** Before, they reset to their defaults on every login.
 - **Removed:** guild auto-ban and auto-kick of inactive members.
-- **New:** `/bl list`, `/bl warn` (with reasons), cross-realm entries, standalone window, per-player *Warn Me*.
+- **New:** `/bl list`, `/bl warn` (with optional reasons via `/bl reason`), cross-realm entries, standalone window, per-player *Warn Me*.
 
 ---
 

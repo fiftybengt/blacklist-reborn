@@ -13,9 +13,10 @@ BlackList = {};
 BlackListedPlayers = {};
 
 local BL_DEFAULTS = {
-	Sound  = true,
-	Center = true,
-	Chat   = true,
+	Sound      = true,
+	Center     = true,
+	Chat       = true,
+	WarnReason = false,	-- /bl reason on|off: include reasons in /bl warn
 };
 
 -- Menus that get the Black List panel. RAID is the one the raid frames actually use

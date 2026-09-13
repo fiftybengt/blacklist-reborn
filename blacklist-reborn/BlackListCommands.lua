@@ -8,20 +8,19 @@
 --   /bl list                  blacklisted members of your current group (raid if in a raid)
 --   /bl list -g               blacklisted members of your guild
 --   /bl warn [-p|-r|-g]       announce them; no flag means raid if in a raid, else party
+--   /bl reason on|off         include the blacklist reason in /bl warn (saved, default off)
 --   /bl show | /bl options    open the window / the options panel
 --
 -- Flags always take a dash. /bl -p, /bl -r and /bl -g are shorthand for /bl warn -p|-r|-g.
 ----------------------------------------------------------------------------------------------------
 
 -- SendChatMessage is capped at 255 characters and bursts get throttled, so announcements are
--- queued and drained slowly.
-local BL_CHAT_LIMIT = 240;
+-- queued and drained slowly, one player per line.
+local BL_CHAT_MAX = 255;
 local BL_CHAT_INTERVAL = 0.3;
-local BL_MAX_LINES = 6;
 
--- Reasons can run to 500 characters, which no single chat line can carry. Announced reasons are
--- trimmed to this; the untrimmed text is still there in /bl list and the details panel.
-local BL_REASON_LIMIT = 120;
+-- Most players announced by one /bl warn; the rest are summed up in a final line.
+local BL_MAX_WARN_PLAYERS = 10;
 
 local queue = {};
 local queueElapsed = 0;
@@ -59,51 +58,41 @@ local function BL_Announce(lines, channel)
 
 end
 
--- Packs entries into as few chat lines as will fit, capped at BL_MAX_LINES. Entries carry their
--- own commas once reasons are included, so they are separated with a semicolon.
-local function BL_PackLines(prefix, entries)
+-- Cuts a line to the chat limit: max characters minus 2, then "..". Backs off to a whole UTF-8
+-- character so a name or reason in another alphabet is never split mid-character.
+local function BL_FitChatLine(line)
 
-	local lines = {};
-	local current = nil;
+	if (string.len(line) <= BL_CHAT_MAX) then return line; end
 
-	for i = 1, table.getn(entries) do
-		local entry = entries[i];
+	local cut = BL_CHAT_MAX - 2;
+	local nextByte = string.byte(line, cut + 1);
 
-		if (not current) then
-			current = prefix .. entry;
-		elseif (string.len(current) + string.len(entry) + 2 <= BL_CHAT_LIMIT) then
-			current = current .. "; " .. entry;
-		else
-			table.insert(lines, current);
-			if (table.getn(lines) >= BL_MAX_LINES) then return lines; end
-			current = prefix .. entry;
-		end
+	while (cut > 0 and nextByte and nextByte >= 128 and nextByte <= 191) do
+		cut = cut - 1;
+		nextByte = string.byte(line, cut + 1);
 	end
 
-	if (current) then table.insert(lines, current); end
-
-	return lines;
+	return string.sub(line, 1, cut) .. "..";
 
 end
 
--- "Name - reason", or just "Name" when no reason was recorded.
-local function BL_DescribePlayer(player)
+-- "Name blacklisted at 2026-09-13", plus " for <reason>" when reasons are switched on.
+local function BL_DescribePlayer(player, withReason)
 
-	local text = BlackList:FormatPlayer(player);
-	local reason = player["reason"];
+	local name = BlackList:FormatPlayer(player);
+	local when = player["added"] and date("%Y-%m-%d", player["added"]) or BL_UNKNOWN_DATE;
 
-	if (not reason or reason == "") then return text; end
-
+	local reason = withReason and player["reason"] or "";
 	reason = string.gsub(reason, "%s+", " ");
 	reason = string.gsub(reason, "^%s*(.-)%s*$", "%1");
+	-- A bare "|" starts an escape sequence in chat and gets the message rejected.
+	reason = string.gsub(reason, "|", "/");
 
-	if (reason == "") then return text; end
-
-	if (string.len(reason) > BL_REASON_LIMIT) then
-		reason = string.sub(reason, 1, BL_REASON_LIMIT - 3) .. "...";
+	if (reason == "") then
+		return BL_FitChatLine(format(BL_WARN_LINE, name, when));
 	end
 
-	return text .. " - " .. reason;
+	return BL_FitChatLine(format(BL_WARN_LINE_REASON, name, when, reason));
 
 end
 
@@ -272,24 +261,52 @@ function BlackList:WarnGroup(flags)
 
 end
 
--- Announces the blacklisted players in scope to a chat channel, each with the reason you recorded.
+-- Announces the blacklisted players in scope to a chat channel, one line each. Reasons are
+-- included only when switched on with /bl reason on.
 function BlackList:SendWarning(channel, scope)
 
 	local matches, label = self:CollectMatches(scope);
+	local count = table.getn(matches);
 
-	if (table.getn(matches) == 0) then
+	if (count == 0) then
 		self:AddMessage(format(BL_LIST_NONE, label), "yellow", true);
 		return;
 	end
 
-	local entries = {};
-	for i = 1, table.getn(matches) do
-		table.insert(entries, BL_DescribePlayer(matches[i].player));
+	local withReason = BlackListConfig and BlackListConfig.WarnReason;
+	local lines = {};
+
+	for i = 1, math.min(count, BL_MAX_WARN_PLAYERS) do
+		table.insert(lines, BL_DescribePlayer(matches[i].player, withReason));
 	end
 
-	BL_Announce(BL_PackLines(BL_WARN_PREFIX, entries), channel);
+	if (count > BL_MAX_WARN_PLAYERS) then
+		table.insert(lines, format(BL_WARN_MORE, count - BL_MAX_WARN_PLAYERS));
+	end
 
-	self:AddMessage(format(BL_WARN_SENT, table.getn(entries), channel), "yellow", true);
+	BL_Announce(lines, channel);
+
+	self:AddMessage(format(BL_WARN_SENT, count, channel), "yellow", true);
+
+end
+
+-- /bl reason on | off, any case. With no argument, reports the current setting.
+function BlackList:SetWarnReason(arg)
+
+	if (not BlackListConfig) then return; end
+
+	arg = string.lower(arg or "");
+
+	if (arg == "on") then
+		BlackListConfig.WarnReason = true;
+		self:AddMessage(BL_REASON_NOW_ON, "yellow", true);
+	elseif (arg == "off") then
+		BlackListConfig.WarnReason = false;
+		self:AddMessage(BL_REASON_NOW_OFF, "yellow", true);
+	else
+		local state = BlackListConfig.WarnReason and "ON" or "OFF";
+		self:AddMessage(format(BL_REASON_USAGE, state), "yellow", true);
+	end
 
 end
 
@@ -344,6 +361,9 @@ function BlackList:HandleSlashCmd(args)
 
 	elseif (verb == "warn") then
 		self:WarnGroup(flags);
+
+	elseif (verb == "reason") then
+		self:SetWarnReason(rest);
 
 	else
 		self:AddMessage(format(BL_ERR_UNKNOWN, verb), "red", true);

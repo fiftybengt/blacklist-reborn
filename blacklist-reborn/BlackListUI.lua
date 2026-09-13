@@ -62,7 +62,13 @@ BL_SCOPE_GUILD             = "your guild";
 
 BL_LIST_HEADER             = BL_PREFIX .. "%d in %s";
 BL_LIST_NONE               = BL_PREFIX .. "nobody in %s is on your blacklist.";
-BL_WARN_PREFIX             = "On my blacklist: ";
+BL_WARN_LINE               = "%s blacklisted at %s";
+BL_WARN_LINE_REASON        = "%s blacklisted at %s for %s";
+BL_WARN_MORE               = "...and %d more blacklisted.";
+BL_UNKNOWN_DATE            = "an unknown date";
+BL_REASON_NOW_ON           = BL_PREFIX .. "reasons ON - /bl warn now includes why each player was blacklisted.";
+BL_REASON_NOW_OFF          = BL_PREFIX .. "reasons OFF - /bl warn shows names and dates only.";
+BL_REASON_USAGE            = BL_PREFIX .. "reasons are %s. Use /bl reason on or /bl reason off.";
 BL_WARN_SENT               = BL_PREFIX .. "announced %d player(s) to %s.";
 BL_GUILD_ROSTER_PENDING    = BL_PREFIX .. "fetching the guild roster, one moment...";
 
@@ -90,6 +96,7 @@ BL_HELP_LINES = {
 	"/bl list -g - blacklisted players in your guild",
 	"/bl warn - announce them to raid, or party",
 	"/bl warn -p | -r | -g - announce to party / raid / guild",
+	"/bl reason on | off - include reasons in /bl warn (default off)",
 	"/bl options - open the options panel",
 };
 
