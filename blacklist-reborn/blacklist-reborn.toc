@@ -1,0 +1,12 @@
+## Interface: 30500
+## Title: Blacklist Reborn
+## Version: 1
+## Author: Authors legacy version built-upon: Logan / ElrickEnonimis.
+## Author: Claude code and fiftybengt ;)
+## Notes: Overhauled system no spam, chat commands, bug removal.
+## SavedVariables: BlackListedPlayers
+## SavedVariablesPerCharacter: BlackListConfig
+
+Bindings.xml
+BlackListUI.xml
+BlackListOptions.xml
